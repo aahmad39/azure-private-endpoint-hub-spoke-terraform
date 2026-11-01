@@ -3,7 +3,7 @@ resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
   tags = {
-    Environment = "Demo"
+    Environment  = "Demo"
     Architecture = "Hub-Spoke-Private-Endpoint"
   }
 }
@@ -200,3 +200,4 @@ resource "azurerm_private_dns_zone_virtual_network_link" "vm_dns_link" {
   private_dns_zone_name = azurerm_private_dns_zone.blob_dns.name
   virtual_network_id    = azurerm_virtual_network.vm_vnet.id
 }
+

@@ -29,3 +29,4 @@ output "ssh_command" {
   description = "SSH Command to connect to the test VM"
   value       = "ssh ${var.admin_username}@${azurerm_public_ip.vm_pip.ip_address}"
 }
+

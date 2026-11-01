@@ -143,3 +143,4 @@ To avoid ongoing Azure charges:
 ```bash
 terraform destroy -auto-approve
 ```
+
