@@ -1,0 +1,53 @@
+# Resource Group
+resource_group = {
+  name     = "rg-private-endpoint-dev"
+  location = "eastus"
+  tags = {
+    Environment = "Development"
+    Project     = "Private-Endpoint-Demo"
+  }
+}
+
+# Nested Map for VNets and Subnets (as per diagram: 10.143.0.0/16 and 10.124.0.0/16)
+vnets = {
+  "vnet-spoke-vm" = {
+    address_space = ["10.143.0.0/16"]
+    subnets = {
+      "snet-vm" = {
+        address_prefix = "10.143.0.0/24"
+      }
+    }
+  }
+
+  "vnet-hub" = {
+    address_space = ["10.124.0.0/16"]
+    subnets = {
+      "snet-pe" = {
+        address_prefix = "10.124.0.0/24"
+      }
+    }
+  }
+}
+
+# Peering between Spoke and Hub
+peering = {
+  vnet_a_key = "vnet-spoke-vm"
+  vnet_b_key = "vnet-hub"
+}
+
+# VM Configuration in Spoke VNet
+vm_config = {
+  name           = "vm-client"
+  size           = "Standard_B1s"
+  subnet_key     = "vnet-spoke-vm-snet-vm"
+  admin_username = "azureuser"
+  admin_password = "ComplexAzureP@ssw0rd2026!"
+}
+
+# Storage & Private Endpoint in Hub VNet
+storage_config = {
+  prefix         = "dstorage"
+  container_name = "data"
+  pe_name        = "pe-storage-blob"
+  pe_subnet_key  = "vnet-hub-snet-pe"
+}

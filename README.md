@@ -1,51 +1,63 @@
 # Azure Storage Private Endpoint with Hub-Spoke VNet Peering & Private DNS
 
-This repository provides an enterprise-ready, **Parent-Child Modular Terraform architecture** implementing secure, private connectivity to an **Azure Storage Account (Blob Storage)** from a Virtual Machine located in a peered Virtual Network using **Azure Private Endpoint** and **Azure Private DNS Zone**.
+This repository uses a clean **Environment-Module (Parent-Child) Pattern** using clean **nested maps** for VNets and Subnets, avoiding unnecessary code complexity.
 
 ---
 
-## 🏗️ Architecture Design (Parent & Child Modules)
+## 🏗️ Repository Structure
 
-```
+```text
 d:\private_endpoint_github/
 ├── .gitignore
 ├── README.md
-└── terraform/
-    ├── provider.tf
-    ├── variables.tf
-    ├── outputs.tf
-    ├── terraform.tfvars.example
-    ├── main.tf                               # <-- Root (Parent) Module calling Child Modules
-    └── modules/                              # <-- Reusable Child Modules
-        ├── resource_group/                   # 1. Resource Group Module
-        │   ├── main.tf
-        │   ├── variables.tf
-        │   └── outputs.tf
-        ├── network/                          # 2. Virtual Network & Subnet Module (Used for Spoke & Hub)
-        │   ├── main.tf
-        │   ├── variables.tf
-        │   └── outputs.tf
-        ├── peering/                          # 4. Bi-directional VNet Peering Module
-        │   ├── main.tf
-        │   ├── variables.tf
-        │   └── outputs.tf
-        ├── vm/                               # 3. Linux Virtual Machine, NIC, NSG & PIP Module
-        │   ├── main.tf
-        │   ├── variables.tf
-        │   └── outputs.tf
-        ├── private_dns/                      # 7. Private DNS Zone & Multi-VNet Links Module
-        │   ├── main.tf
-        │   ├── variables.tf
-        │   └── outputs.tf
-        └── storage_private_endpoint/         # 5 & 6. Storage Account & Private Endpoint Module
-            ├── main.tf
-            ├── variables.tf
-            └── outputs.tf
+├── modules/                                      # 🧩 CHILD MODULE (All resources encapsulated here)
+│   └── private_endpoint_architecture/
+│       ├── main.tf                               # RG, VNets, Subnets, Peering, VM, Storage, PE, Private DNS
+│       ├── variables.tf                          # Variable schemas with nested map
+│       └── outputs.tf                            # Output values
+│
+└── environments/                                 # 🏢 PARENT ENVIRONMENT MODULES
+    └── dev/                                      # Development Environment
+        ├── provider.tf
+        ├── main.tf                               # Root Parent calling the child module
+        ├── variables.tf
+        ├── terraform.tfvars                      # Nested Map configurations
+        ├── terraform.tfvars.example
+        └── outputs.tf
 ```
 
 ---
 
-## 📐 Network & Resource Flow Diagram
+## 🗺️ Nested Map Configuration
+
+All network and subnet configurations are managed cleanly via **nested maps** in [`environments/dev/terraform.tfvars`](file:///d:/private_endpoint_github/environments/dev/terraform.tfvars):
+
+```hcl
+# Nested Map for VNets and Subnets (as per diagram: 10.143.0.0/16 and 10.124.0.0/16)
+vnets = {
+  "vnet-spoke-vm" = {
+    address_space = ["10.143.0.0/16"]
+    subnets = {
+      "snet-vm" = {
+        address_prefix = "10.143.0.0/24"
+      }
+    }
+  }
+
+  "vnet-hub" = {
+    address_space = ["10.124.0.0/16"]
+    subnets = {
+      "snet-pe" = {
+        address_prefix = "10.124.0.0/24"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 📐 Architecture & Flow
 
 ```
 +-------------------------------------------------------+       +-------------------------------------------------------+
@@ -79,74 +91,40 @@ d:\private_endpoint_github/
 
 ---
 
-## 🛠️ Step-by-Step Implementation
+## 🚀 How to Deploy
 
-1. **Resource Group**: Created via `modules/resource_group`.
-2. **2 VNets & Subnets**:
-   - `modules/network` creates Spoke VNet (`10.143.0.0/16`) with `snet-vm` (`10.143.0.0/24`).
-   - `modules/network` creates Hub VNet (`10.124.0.0/16`) with `snet-pe` (`10.124.0.0/24`).
-3. **VM**: Created via `modules/vm` in `snet-vm`.
-4. **VNet Peering**: Two-way peering configured via `modules/peering`.
-5. **Private Endpoint & Storage Account**:
-   - Configured via `modules/storage_private_endpoint` with public access disabled.
-   - Private Endpoint is connected to `snet-pe` and acquires a private IP (`10.124.0.x`).
-6. **Private DNS Zone (`privatelink.blob.core.windows.net`)**:
-   - Created via `modules/private_dns`.
-   - Linked to both Hub and Spoke VNets so DNS queries from the VM automatically resolve to the private endpoint IP.
-7. **Testing & Validation**:
-   - SSH to VM.
-   - Run `nslookup <storage_account>.blob.core.windows.net` to verify resolution to the private IP.
+1. **Go to the Environment Directory:**
+   ```bash
+   cd environments/dev
+   ```
 
----
+2. **Initialize Terraform:**
+   ```bash
+   terraform init
+   ```
 
-## 🚀 Deployment Instructions
+3. **Validate & Plan:**
+   ```bash
+   terraform validate
+   terraform plan
+   ```
 
-### Prerequisites
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.3.0
-- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) logged in (`az login`)
-
-### Commands
-```bash
-cd terraform
-
-# 1. Initialize modules and providers
-terraform init
-
-# 2. Validate configuration
-terraform validate
-
-# 3. Plan deployment
-terraform plan
-
-# 4. Apply deployment
-terraform apply -auto-approve
-```
+4. **Deploy:**
+   ```bash
+   terraform apply -auto-approve
+   ```
 
 ---
 
-## 🧪 DNS Verification Steps
+## 🧪 Testing & Verification
 
 1. **SSH into the VM:**
    ```bash
-   ssh <admin_username>@<vm_public_ip>
+   ssh azureuser@<vm_public_ip>
    ```
 
-2. **Verify DNS Resolution:**
+2. **DNS Resolution Check:**
    ```bash
    nslookup <storage_account_name>.blob.core.windows.net
    ```
-   **Output Verification:**
-   The output must resolve to `<storage_account_name>.privatelink.blob.core.windows.net` with the Private IP:
-   ```text
-   Non-authoritative answer:
-   <storage_account_name>.blob.core.windows.net canonical name = <storage_account_name>.privatelink.blob.core.windows.net.
-   Name:   <storage_account_name>.privatelink.blob.core.windows.net
-   Address: 10.124.0.4
-   ```
-
----
-
-## 🧹 Cleanup
-```bash
-terraform destroy -auto-approve
-```
+   *The FQDN will resolve directly to `<storage_account_name>.privatelink.blob.core.windows.net` and point to the Private Endpoint IP (`10.124.0.4`).*

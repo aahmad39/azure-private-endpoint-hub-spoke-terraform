@@ -1,6 +1,0 @@
-location            = "eastus"
-resource_group_name = "rg-private-endpoint-demo"
-admin_username      = "azureuser"
-admin_password      = "ComplexAzureP@ssw0rd2026!"
-vm_size             = "Standard_B1s"
-
