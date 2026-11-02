@@ -1,9 +1,8 @@
-resource "azurerm_network_security_group" "nsg" {
-  for_each            = var.network_security_groups
+resource "azurerm_network_security_group" "this" {
+  for_each            = var.nsgs
   name                = each.value.name
   location            = each.value.location
-  resource_group_name = each.value.resource_group_name
-  tags                = try(each.value.tags, {})
+  resource_group_name = each.value.rg_name
 
   dynamic "security_rule" {
     for_each = try(each.value.security_rules, [])

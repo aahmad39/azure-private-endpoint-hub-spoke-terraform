@@ -1,3 +1,3 @@
 output "resource_groups" {
-  value = azurerm_resource_group.rg
+  value = azurerm_resource_group.this
 }

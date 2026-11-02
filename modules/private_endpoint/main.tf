@@ -1,10 +1,9 @@
-resource "azurerm_private_endpoint" "pe" {
+resource "azurerm_private_endpoint" "this" {
   for_each            = var.private_endpoints
   name                = each.value.name
   location            = each.value.location
-  resource_group_name = each.value.resource_group_name
+  resource_group_name = each.value.rg_name
   subnet_id           = each.value.subnet_id
-  tags                = try(each.value.tags, {})
 
   private_service_connection {
     name                           = each.value.connection_name

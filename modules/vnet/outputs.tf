@@ -1,3 +1,3 @@
 output "vnets" {
-  value = azurerm_virtual_network.vnet
+  value = azurerm_virtual_network.this
 }

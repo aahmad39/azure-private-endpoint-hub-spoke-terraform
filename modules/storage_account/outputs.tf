@@ -1,5 +1,5 @@
 output "storage_accounts" {
-  value = azurerm_storage_account.sa
+  value = azurerm_storage_account.str
 }
 
 output "containers" {
