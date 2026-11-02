@@ -1,109 +1,66 @@
-# Azure Storage Private Endpoint with Hub-Spoke VNet Peering & Private DNS
+# Azure Private Endpoint Automation (Granular Reusable Modules Architecture)
 
-This repository uses a clean **Environment-Module (Parent-Child) Pattern** using clean **nested maps** for VNets and Subnets, avoiding unnecessary code complexity.
+This repository implements the end-to-end automation for connecting an Azure Virtual Machine to an Azure Storage Account through an **Azure Private Endpoint**, **Hub-Spoke VNet Peering**, and **Azure Private DNS Zone**.
+
+Every individual Azure resource is decoupled into its own independent, reusable **Child Module**, while the environment root (`environments/dev`) serves as the **Parent Module** that connects the modules using clean **nested maps**.
 
 ---
 
-## 🏗️ Repository Structure
+## 🏗️ Architecture & Module Organization
 
 ```text
 d:\private_endpoint_github/
 ├── .gitignore
 ├── README.md
-├── modules/                                      # 🧩 CHILD MODULE (All resources encapsulated here)
-│   └── private_endpoint_architecture/
-│       ├── main.tf                               # RG, VNets, Subnets, Peering, VM, Storage, PE, Private DNS
-│       ├── variables.tf                          # Variable schemas with nested map
-│       └── outputs.tf                            # Output values
 │
-└── environments/                                 # 🏢 PARENT ENVIRONMENT MODULES
-    └── dev/                                      # Development Environment
-        ├── provider.tf
-        ├── main.tf                               # Root Parent calling the child module
-        ├── variables.tf
-        ├── terraform.tfvars                      # Nested Map configurations
+├── modules/                                   # 🧩 INDEPENDENT REUSABLE CHILD MODULES
+│   ├── resource_group/                        # Azure Resource Groups
+│   ├── vnet/                                  # Virtual Networks
+│   ├── subnet/                                # Subnets
+│   ├── peering/                               # VNet Peerings (Bi-directional)
+│   ├── public_ip/                             # Public IP Addresses
+│   ├── nsg/                                   # Network Security Groups & Rules
+│   ├── nic/                                   # Network Interfaces & NSG Association
+│   ├── virtual_machine/                       # Linux Virtual Machines
+│   ├── storage_account/                       # Storage Accounts & Blob Containers
+│   ├── private_dns/                           # Private DNS Zones & Virtual Network Links
+│   └── private_endpoint/                      # Private Endpoints & PSC Links
+│
+└── environments/                              # 🏢 PARENT ENVIRONMENT ROOT
+    └── dev/                                   # Development Environment
+        ├── provider.tf                        # azurerm & random providers
+        ├── main.tf                            # Parent orchestrator calling each child module
+        ├── variables.tf                       # Declarations
+        ├── terraform.tfvars                   # Variable inputs (Nested Maps)
         ├── terraform.tfvars.example
-        └── outputs.tf
+        └── outputs.tf                         # Output values
 ```
 
 ---
 
-## 🗺️ Nested Map Configuration
+## 🗺️ Nested Maps in Action (`terraform.tfvars`)
 
-All network and subnet configurations are managed cleanly via **nested maps** in [`environments/dev/terraform.tfvars`](file:///d:/private_endpoint_github/environments/dev/terraform.tfvars):
-
-```hcl
-# Nested Map for VNets and Subnets (as per diagram: 10.143.0.0/16 and 10.124.0.0/16)
-vnets = {
-  "vnet-spoke-vm" = {
-    address_space = ["10.143.0.0/16"]
-    subnets = {
-      "snet-vm" = {
-        address_prefix = "10.143.0.0/24"
-      }
-    }
-  }
-
-  "vnet-hub" = {
-    address_space = ["10.124.0.0/16"]
-    subnets = {
-      "snet-pe" = {
-        address_prefix = "10.124.0.0/24"
-      }
-    }
-  }
-}
-```
-
----
-
-## 📐 Architecture & Flow
-
-```
-+-------------------------------------------------------+       +-------------------------------------------------------+
-|  VM Spoke VNet (10.143.0.0/16)                        |       |  Hub VNet (10.124.0.0/16)                             |
-|                                                       |       |                                                       |
-|  +-------------------------------------------------+  |       |  +-------------------------------------------------+  |
-|  | VM Subnet (10.143.0.0/24)                       |  |       |  | PE Subnet (10.124.0.0/24)                       |  |
-|  |                                                 |  |       |  |                                                 |  |
-|  |  +-------------------+                          |  |       |  |  +-------------------+                          |  |
-|  |  |  Client VM        |                          |  |       |  |  | Private Endpoint  |---(Private Service Link)-+  |
-|  |  |  10.143.0.4       |                          |  |       |  |  | 10.124.0.4        |                          |  |
-|  |  +-------------------+                          |  |       |  |  +-------------------+                          |  |
-|  +-------------------------------------------------+  |       |  +-------------------------------------------------+  |
-+-------------------------------------------------------+       +-------------------------------------------------------+
-                           ^                                                               ^
-                           |                                                               |
-                           +================== Bi-directional Peering =====================+
-                                                                                           |
-                                                                                           v
-                                                         +-------------------------------------------------------------+
-                                                         | Azure Storage Account (Public Access Disabled)              |
-                                                         | - Container: data                                           |
-                                                         +-------------------------------------------------------------+
-                                                                                           ^
-                                                                                           |
-                                                         +-------------------------------------------------------------+
-                                                         | Azure Private DNS Zone: privatelink.blob.core.windows.net   |
-                                                         | - Linked to: VM Spoke VNet & Hub VNet                       |
-                                                         +-------------------------------------------------------------+
-```
+Har ek resource ek clear key-value structure se defined hai:
+- **VNets & Subnets**: Spoke (`10.143.0.0/16` & `/24`) aur Hub (`10.124.0.0/16` & `/24`).
+- **Peering**: Spoke-to-Hub aur Hub-to-Spoke referencing `hub_vnet` & `spoke_vnet`.
+- **Private DNS & Links**: `privatelink.blob.core.windows.net` linked with both VNets.
+- **Private Endpoint**: Storage Account aur Subnet ko connect karta hai with automatic DNS registration.
 
 ---
 
 ## 🚀 How to Deploy
 
-1. **Go to the Environment Directory:**
+1. **Navigate to the dev environment:**
    ```bash
    cd environments/dev
    ```
 
-2. **Initialize Terraform:**
+2. **Initialize all 11 child modules:**
    ```bash
    terraform init
    ```
 
-3. **Validate & Plan:**
+3. **Verify and Plan:**
    ```bash
    terraform validate
    terraform plan
@@ -116,15 +73,20 @@ vnets = {
 
 ---
 
-## 🧪 Testing & Verification
+## 🧪 Verification & DNS Testing
 
-1. **SSH into the VM:**
+1. **SSH to Linux VM:**
    ```bash
    ssh azureuser@<vm_public_ip>
    ```
 
-2. **DNS Resolution Check:**
+2. **Run nslookup on Storage Account FQDN:**
    ```bash
    nslookup <storage_account_name>.blob.core.windows.net
    ```
-   *The FQDN will resolve directly to `<storage_account_name>.privatelink.blob.core.windows.net` and point to the Private Endpoint IP (`10.124.0.4`).*
+   **Output:**
+   ```text
+   <storage_account_name>.blob.core.windows.net canonical name = <storage_account_name>.privatelink.blob.core.windows.net.
+   Name:   <storage_account_name>.privatelink.blob.core.windows.net
+   Address: 10.124.0.4
+   ```

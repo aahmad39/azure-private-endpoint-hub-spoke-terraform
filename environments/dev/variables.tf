@@ -1,47 +1,51 @@
-variable "resource_group" {
-  description = "Resource Group details"
-  type = object({
-    name     = string
-    location = string
-    tags     = optional(map(string), {})
-  })
+variable "resource_groups" {
+  type = any
 }
 
 variable "vnets" {
-  description = "Nested map of VNets and subnets"
-  type = map(object({
-    address_space = list(string)
-    subnets = map(object({
-      address_prefix = string
-    }))
-  }))
+  type = any
 }
 
-variable "peering" {
-  description = "VNet Peering keys"
-  type = object({
-    vnet_a_key = string
-    vnet_b_key = string
-  })
+variable "subnets" {
+  type = any
 }
 
-variable "vm_config" {
-  description = "Client VM configuration"
-  type = object({
-    name           = string
-    size           = string
-    subnet_key     = string
-    admin_username = string
-    admin_password = string
-  })
+variable "peerings" {
+  type = any
 }
 
-variable "storage_config" {
-  description = "Storage & Private Endpoint details"
-  type = object({
-    prefix         = string
-    container_name = string
-    pe_name        = string
-    pe_subnet_key  = string
-  })
+variable "public_ips" {
+  type = any
+}
+
+variable "network_security_groups" {
+  type = any
+}
+
+variable "network_interfaces" {
+  type = any
+}
+
+variable "linux_vms" {
+  type = any
+}
+
+variable "storage_accounts" {
+  type = any
+}
+
+variable "containers" {
+  type = any
+}
+
+variable "dns_zones" {
+  type = any
+}
+
+variable "vnet_links" {
+  type = any
+}
+
+variable "private_endpoints" {
+  type = any
 }
