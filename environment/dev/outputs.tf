@@ -21,3 +21,4 @@ output "vm_private_ip" {
 output "ssh_command" {
   value = "ssh azureuser@${values(module.pip-dev.public_ips)[0].ip_address}"
 }
+

@@ -7,3 +7,4 @@ variable "dns_links" {
   description = "Private DNS Zone VNet links configuration map"
   default     = {}
 }
+

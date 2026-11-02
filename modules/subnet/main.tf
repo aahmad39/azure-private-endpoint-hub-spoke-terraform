@@ -5,3 +5,4 @@ resource "azurerm_subnet" "this" {
   virtual_network_name = each.value.vnet_name
   address_prefixes     = each.value.address_pre
 }
+

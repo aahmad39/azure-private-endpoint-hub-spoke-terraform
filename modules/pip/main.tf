@@ -6,3 +6,4 @@ resource "azurerm_public_ip" "this" {
   allocation_method   = try(each.value.allocation_method, "Static")
   sku                 = try(each.value.sku, "Standard")
 }
+

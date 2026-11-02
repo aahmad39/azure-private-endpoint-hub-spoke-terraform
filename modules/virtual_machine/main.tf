@@ -1,3 +1,22 @@
+data "azurerm_subnet" "subnet" {
+  for_each             = var.vms
+  name                 = each.value.subnet_name
+  virtual_network_name = each.value.vnet_name
+  resource_group_name  = each.value.rg_name
+}
+
+data "azurerm_public_ip" "pip" {
+  for_each            = var.vms
+  name                = each.value.pip_name
+  resource_group_name = each.value.rg_name
+}
+
+data "azurerm_network_security_group" "nsg" {
+  for_each            = var.vms
+  name                = each.value.nsg_name
+  resource_group_name = each.value.rg_name
+}
+
 resource "azurerm_network_interface" "nic" {
   for_each            = var.vms
   name                = each.value.nic_name
@@ -6,19 +25,16 @@ resource "azurerm_network_interface" "nic" {
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = each.value.subnet_id
-    private_ip_address_allocation = try(each.value.private_ip, "Dynamic")
-    public_ip_address_id          = try(each.value.pip_id, null)
+    subnet_id                     = data.azurerm_subnet.subnet[each.key].id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = data.azurerm_public_ip.pip[each.key].id
   }
 }
 
 resource "azurerm_network_interface_security_group_association" "nic_nsg" {
-  for_each = {
-    for k, v in var.vms : k => v
-    if try(v.nsg_id, null) != null
-  }
+  for_each                  = var.vms
   network_interface_id      = azurerm_network_interface.nic[each.key].id
-  network_security_group_id = each.value.nsg_id
+  network_security_group_id = data.azurerm_network_security_group.nsg[each.key].id
 }
 
 resource "azurerm_linux_virtual_machine" "main" {
@@ -33,15 +49,15 @@ resource "azurerm_linux_virtual_machine" "main" {
   disable_password_authentication = false
 
   os_disk {
-    name                 = try(each.value.os_disk_name, "${each.value.name}-osdisk")
+    name                 = "${each.value.name}-osdisk"
     caching              = "ReadWrite"
-    storage_account_type = try(each.value.managed_disk_type, "Standard_LRS")
+    storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
-    publisher = try(each.value.publisher, "Canonical")
-    offer     = try(each.value.offer, "0001-com-ubuntu-server-jammy")
-    sku       = try(each.value.sku, "22_04-lts-gen2")
-    version   = try(each.value.version, "latest")
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
   }
 }

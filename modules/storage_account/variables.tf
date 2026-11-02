@@ -7,3 +7,4 @@ variable "containers" {
   description = "Containers configuration map"
   default     = {}
 }
+

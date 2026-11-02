@@ -4,3 +4,4 @@ resource "azurerm_resource_group" "this" {
   location = each.value.location
   tags     = try(each.value.tags, {})
 }
+

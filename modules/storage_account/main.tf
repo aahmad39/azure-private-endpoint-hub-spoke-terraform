@@ -22,3 +22,4 @@ resource "azurerm_storage_container" "container" {
   storage_account_name  = azurerm_storage_account.str[each.value.storage_account_key].name
   container_access_type = try(each.value.container_access_type, "private")
 }
+

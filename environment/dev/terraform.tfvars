@@ -41,16 +41,18 @@ subnet-dev = {
 
 peering-dev = {
   peering1 = {
-    name           = "peer-spoke-to-hub"
-    rg_name        = "rg-private-endpoint-dev"
-    vnet_name      = "vnet-vm-spoke"
-    remote_vnet_key = "vnet2"
+    name             = "peer-spoke-to-hub"
+    rg_name          = "rg-private-endpoint-dev"
+    vnet_name        = "vnet-vm-spoke"
+    remote_vnet_name = "vnet-hub"
+    remote_rg_name   = "rg-private-endpoint-dev"
   }
   peering2 = {
-    name           = "peer-hub-to-spoke"
-    rg_name        = "rg-private-endpoint-dev"
-    vnet_name      = "vnet-hub"
-    remote_vnet_key = "vnet1"
+    name             = "peer-hub-to-spoke"
+    rg_name          = "rg-private-endpoint-dev"
+    vnet_name        = "vnet-hub"
+    remote_vnet_name = "vnet-vm-spoke"
+    remote_rg_name   = "rg-private-endpoint-dev"
   }
 }
 
@@ -89,9 +91,10 @@ vm-dev = {
     rg_name        = "rg-private-endpoint-dev"
     location       = "eastus"
     nic_name       = "nic-vm-client"
-    subnet_key     = "subnet1"
-    pip_key        = "pip1"
-    nsg_key        = "nsg1"
+    vnet_name      = "vnet-vm-spoke"
+    subnet_name    = "snet-vm"
+    pip_name       = "pip-vm-client"
+    nsg_name       = "nsg-vm-client"
     vm_size        = "Standard_B1s"
     admin_username = "azureuser"
     admin_password = "ComplexAzureP@ssw0rd2026!"
@@ -100,7 +103,7 @@ vm-dev = {
 
 storage_account-dev = {
   sa1 = {
-    storage_account_name     = "dstorage"
+    storage_account_name     = "dstoragepe2026"
     rg_name                  = "rg-private-endpoint-dev"
     location                 = "eastus"
     account_tier             = "Standard"
@@ -124,28 +127,28 @@ dns_zones-dev = {
 
 dns_links-dev = {
   link1 = {
-    name         = "link-vnet-hub"
-    rg_name      = "rg-private-endpoint-dev"
-    dns_zone_key = "dns1"
-    vnet_key     = "vnet2"
+    name          = "link-vnet-hub"
+    rg_name       = "rg-private-endpoint-dev"
+    dns_zone_name = "privatelink.blob.core.windows.net"
+    vnet_name     = "vnet-hub"
   }
   link2 = {
-    name         = "link-vnet-spoke"
-    rg_name      = "rg-private-endpoint-dev"
-    dns_zone_key = "dns1"
-    vnet_key     = "vnet1"
+    name          = "link-vnet-spoke"
+    rg_name       = "rg-private-endpoint-dev"
+    dns_zone_name = "privatelink.blob.core.windows.net"
+    vnet_name     = "vnet-vm-spoke"
   }
 }
 
 private_endpoints-dev = {
   pe1 = {
-    name                = "pe-storage-blob"
-    location            = "eastus"
-    rg_name             = "rg-private-endpoint-dev"
-    subnet_key          = "subnet2"
-    connection_name     = "psc-blob"
-    storage_account_key = "sa1"
-    subresource_names   = ["blob"]
-    dns_zone_key        = "dns1"
+    name                 = "pe-storage-blob"
+    location             = "eastus"
+    rg_name              = "rg-private-endpoint-dev"
+    vnet_name            = "vnet-hub"
+    subnet_name          = "snet-pe"
+    connection_name      = "psc-blob"
+    storage_account_name = "dstoragepe2026"
+    dns_zone_name        = "privatelink.blob.core.windows.net"
   }
 }

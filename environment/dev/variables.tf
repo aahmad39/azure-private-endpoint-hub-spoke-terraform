@@ -57,3 +57,4 @@ variable "private_endpoints-dev" {
   description = "Private Endpoints configuration map for dev environment"
   default     = {}
 }
+

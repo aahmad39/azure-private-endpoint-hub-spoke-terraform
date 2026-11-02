@@ -5,3 +5,4 @@ output "storage_accounts" {
 output "containers" {
   value = azurerm_storage_container.container
 }
+
